@@ -6,8 +6,13 @@ steps:
       - |
         echo "$SERVICE_ACCOUNT_KEY" > key.json
         export GOOGLE_APPLICATION_CREDENTIALS="key.json"
+
         pip install -r requirements.txt
-        python main.py --batch_index=0
+
+        # batch_index を Pub/Sub メッセージから取り出す
+        BATCH_INDEX=$(echo "$BUILD_EVENT_JSON" | grep -o '"batch_index": *[0-9]*' | grep -o '[0-9]*')
+        echo "実行バッチ: $BATCH_INDEX"
+        python main.py --batch_index=$BATCH_INDEX
 
 timeout: '1800s'
 
