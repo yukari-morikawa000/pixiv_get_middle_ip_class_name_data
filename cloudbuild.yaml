@@ -1,0 +1,17 @@
+steps:
+  - name: 'python:3.12'
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        echo "$SERVICE_ACCOUNT_KEY" > key.json
+        export GOOGLE_APPLICATION_CREDENTIALS="key.json"
+        pip install -r requirements.txt
+        python main.py --batch_index=0
+
+timeout: '1800s'
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/hogeticlab-legs-prd/secrets/SERVICE_ACCOUNT_KEY/versions/latest
+      env: SERVICE_ACCOUNT_KEY

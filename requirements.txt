@@ -1,0 +1,6 @@
+# Function dependencies, for example:
+# package>=version
+google.cloud.logging>=3.0.0
+google-cloud-bigquery
+google-api-python-client
+datetime
