@@ -160,5 +160,22 @@ def main():
 
     job(event=fake_event, context=None)
 
+
+# HTTP対応（FastAPI）
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+import uvicorn
+
+app = FastAPI()
+
+@app.post("/")
+async def run_job(request: Request):
+    payload = await request.json()
+    fake_event = {
+        "data": base64.b64encode(json.dumps(payload).encode("utf-8"))
+    }
+    job(fake_event, None)
+    return JSONResponse(content={"status": "done", "batch_index": payload.get("batch_index", 0)})
+
 if __name__ == "__main__":
     main()
