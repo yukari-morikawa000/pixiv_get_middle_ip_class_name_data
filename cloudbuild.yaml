@@ -17,7 +17,7 @@ steps:
       - 'run'
       - 'deploy'
       # Cloud Runのサービス名
-      - 'pixiv-scraper-service'
+      - 'pixiv-middle_class_ip_name_info'
       - '--image'
       # デプロイするイメージを指定
       - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-scraper-repo/scraper-image:latest'
@@ -30,18 +30,18 @@ steps:
       - '--allow-unauthenticated'
       # サービスアカウントを指定。（正式なアカウントに置き換える）
       - '--service-account'
-      - 'your-service-account@your-project-id.iam.gserviceaccount.com'
+      - 'wiki-parser@hogeticlab-legs-prd.iam.gserviceaccount.com'
       # スクレピングは時間がかかる可能性があるため、タイムアウトを最大値の3600秒(60分)に設定。
       - '--timeout'
       - '3600'
       # 必要に応じてメモリを割り当てる。
       - '--memory'
       - '1Gi'
-      # コード内のプロジェクトIDなどを環境変数で渡す場合
-      - '--set-env-vars'
-      - 'GCP_PROJECT_ID=$PROJECT_ID,BQ_DATASET_ID=z_personal_morikawa,BQ_SOURCE_TABLE=pixiv_search_middle_class_ip_name_url,BQ_DESTINATION_TABLE=pixiv_detail_info'
 
 
 # ビルドしたイメージをCloud Buildの成果物として登録
 images:
   - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-scraper-repo/scraper-image:latest'
+
+# ビルド全体のタイムアウトを設定
+timeout: '1200s'
