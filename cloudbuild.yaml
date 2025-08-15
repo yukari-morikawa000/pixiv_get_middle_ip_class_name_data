@@ -1,31 +1,28 @@
 steps:
-  # イメージのビルドとプッシュ
   - name: 'gcr.io/cloud-builders/docker'
     args: ['build', '-t', 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-middle-class-ip-name-info/scraper-image:latest', '.']
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-middle-class-ip-name-info/scraper-image:latest']
 
-  # Cloud Run "Job" としてデプロイ/更新
+  # Cloud Run Jobとしてデプロイし、Pub/Subトリガーを設定
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args:
       - 'run'
       - 'jobs'
       - 'deploy'
-      - 'pixiv-middle-class-ip-name-info-job' # ジョブ名
+      - 'pixiv-middle-class-ip-name-info-job'
       - '--image'
       - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-middle-class-ip-name-info/scraper-image:latest'
       - '--region'
       - 'asia-northeast1'
       - '--service-account'
       - 'hogeticlab-legs-prd@appspot.gserviceaccount.com'
-      # ジョブの最大実行時間を24時間に設定
-      - '--max-retries=0' # 失敗時に再試行しない
-      - '--task-timeout=86400' # 24時間 = 86400秒
-      - '--memory'
-      - '1Gi'
-      - '--set-env-vars'
-      - 'GCP_PROJECT_ID=$PROJECT_ID'
+      - '--task-timeout=86400'
+      - '--memory=1Gi'
+      - '--max-retries=0'
+      # このジョブを起動するPub/Subトピックを指定
+      - '--set-pubsub-trigger=projects/$PROJECT_ID/topics/run-scraper-topic'
 
 images:
   - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-middle-class-ip-name-info/scraper-image:latest'
