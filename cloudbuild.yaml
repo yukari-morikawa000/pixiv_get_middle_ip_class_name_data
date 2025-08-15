@@ -1,43 +1,34 @@
 steps:
-  # ステップ1: Dockerイメージをビルド
+  # イメージのビルドとプッシュ
   - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - 'build'
-      - '-t'
-      - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-middle-class-ip-name-info/scraper-image:latest'
-      - '.'
-
-  # ステップ2: ビルドしたイメージをArtifact Registryにプッシュ
+    args: ['build', '-t', 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-middle-class-ip-name-info/scraper-image:latest', '.']
   - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - 'push'
-      - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-middle-class-ip-name-info/scraper-image:latest'
+    args: ['push', 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-middle-class-ip-name-info/scraper-image:latest']
 
-  # ステップ3: Cloud Runにデプロイ
+  # Cloud Run "Job" としてデプロイ/更新
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args:
       - 'run'
-      - 'deploy'
-      - 'pixiv-middle-class-ip-name-info'
+      - 'jobs'
+      - 'update'
+      - 'pixiv-middle-class-ip-name-info-job' # ジョブ名
       - '--image'
       - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-middle-class-ip-name-info/scraper-image:latest'
       - '--region'
       - 'asia-northeast1'
-      - '--platform'
-      - 'managed'
-      - '--allow-unauthenticated'
       - '--service-account'
       - 'hogeticlab-legs-prd@appspot.gserviceaccount.com'
-      - '--timeout'
-      - '3600'
+      # ジョブの最大実行時間を24時間に設定
+      - '--max-retries=0' # 失敗時に再試行しない
+      - '--task-timeout=86400' # 24時間 = 86400秒
       - '--memory'
       - '1Gi'
+      - '--set-env-vars'
+      - 'GCP_PROJECT_ID=$PROJECT_ID'
 
 images:
   - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-middle-class-ip-name-info/scraper-image:latest'
-
 timeout: '1200s'
-
 options:
   logging: CLOUD_LOGGING_ONLY
