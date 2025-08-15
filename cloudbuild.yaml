@@ -45,3 +45,7 @@ images:
 
 # ビルド全体のタイムアウトを設定
 timeout: '1200s'
+
+# ログの保存先をCloud Loggingのみに指定してエラーを回避
+options:
+  logging: CLOUD_LOGGING_ONLY
