@@ -1,51 +1,43 @@
 steps:
+  # ステップ1: Dockerイメージをビルド
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
       - '-t'
-      - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-scraper-repo/scraper-image:latest'
+      - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-middle-class-ip-name-info/scraper-image:latest'
       - '.'
 
+  # ステップ2: ビルドしたイメージをArtifact Registryにプッシュ
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-scraper-repo/scraper-image:latest'
+      - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-middle-class-ip-name-info/scraper-image:latest'
 
+  # ステップ3: Cloud Runにデプロイ
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args:
       - 'run'
       - 'deploy'
-      # Cloud Runのサービス名
       - 'pixiv-middle-class-ip-name-info'
       - '--image'
-      # デプロイするイメージを指定
-      - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-scraper-repo/scraper-image:latest'
-      # デプロイ先のリージョン
+      - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-middle-class-ip-name-info/scraper-image:latest'
       - '--region'
       - 'asia-northeast1'
       - '--platform'
       - 'managed'
-      # Cloud Schedulerからの呼び出を許可。
       - '--allow-unauthenticated'
-      # サービスアカウントを指定。（正式なアカウントに置き換える）
       - '--service-account'
       - 'hogeticlab-legs-prd@appspot.gserviceaccount.com'
-      # スクレピングは時間がかかる可能性があるため、タイムアウトを最大値の3600秒(60分)に設定。
       - '--timeout'
       - '3600'
-      # 必要に応じてメモリを割り当てる。
       - '--memory'
       - '1Gi'
 
-
-# ビルドしたイメージをCloud Buildの成果物として登録
 images:
-  - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-scraper-repo/scraper-image:latest'
+  - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-middle-class-ip-name-info/scraper-image:latest'
 
-# ビルド全体のタイムアウトを設定
 timeout: '1200s'
 
-# ログの保存先をCloud Loggingのみに指定してエラーを回避
 options:
   logging: CLOUD_LOGGING_ONLY
