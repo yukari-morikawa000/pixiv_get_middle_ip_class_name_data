@@ -17,7 +17,7 @@ steps:
       - 'run'
       - 'deploy'
       # Cloud Runのサービス名
-      - 'pixiv-middle_class_ip_name_info'
+      - 'pixiv-middle-class-ip-name-info'
       - '--image'
       # デプロイするイメージを指定
       - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-scraper-repo/scraper-image:latest'
