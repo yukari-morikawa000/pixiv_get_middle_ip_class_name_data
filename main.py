@@ -9,43 +9,45 @@ import json
 import os
 import argparse
 
-# Cloud Run Jobs用のメイン処理関数
+# Pub/Subトリガーで起動される際の「入り口」となる関数
+def handle_pubsub(event, context):
+    """Pub/Subメッセージをトリガーとしてジョブを実行します。"""
+    batch_index = 0
+    try:
+        # Pub/Subメッセージは 'data' フィールドにBase64エンコードされて格納されています
+        if 'data' in event:
+            message_data = base64.b64decode(event['data']).decode('utf-8')
+            payload = json.loads(message_data)
+            batch_index = int(payload.get("batch_index", 0))
+            print(f"Pub/Subメッセージからバッチ番号 {batch_index} を取得しました。")
+    except Exception as e:
+        print(f"メッセージの解析に失敗しました: {e}。バッチ番号0で実行します。")
+        batch_index = 0
+
+    run_scraping_job(batch_index)
+
+# メインのスクレイピング処理（この中身は変更なし）
 def run_scraping_job(batch_index):
     print(f"処理対象バッチ: {batch_index}")
-
-    # --- BQ設定 ---
     project_id = os.environ.get("GCP_PROJECT_ID", "hogeticlab-legs-prd")
     dataset_id = "z_personal_morikawa"
     source_table = f"{project_id}.{dataset_id}.pixiv_search_middle_class_ip_name_url"
     destination_table = f"{project_id}.{dataset_id}.pixiv_detail_info"
     client = bigquery.Client(project=project_id)
-
     limit = 100
     offset = batch_index * limit
-
-    # --- URL取得クエリ ---
-    query = f"""
-    SELECT URL FROM `{source_table}`
-    WHERE URL IS NOT NULL
-    ORDER BY URL
-    LIMIT {limit} OFFSET {offset}
-    """
+    query = f"SELECT URL FROM `{source_table}` WHERE URL IS NOT NULL ORDER BY URL LIMIT {limit} OFFSET {offset}"
     urls = [row.URL for row in client.query(query).result()]
     print(f"対象URL数: {len(urls)}")
 
-    # --- 詳細取得関数 ---
     def parse_pixiv_detail(url):
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                          "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
-        }
+        headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"}
         try:
             res = requests.get(url, headers=headers, timeout=10)
             res.raise_for_status()
         except Exception as e:
             print(f"URL取得失敗：{url} エラー：{e}")
             return None
-
         soup = BeautifulSoup(res.text, 'html.parser')
         article = soup.find('article')
         if not article: return None
@@ -85,7 +87,6 @@ def run_scraping_job(batch_index):
             "works_count": stats["works_count"]
         }
 
-    # --- URLをシャッフルして処理 ---
     random.shuffle(urls)
     rows_to_insert = []
     for idx, url in enumerate(urls, start=1):
@@ -103,7 +104,6 @@ def run_scraping_job(batch_index):
             print(f"{idx}件完了 → 長めに間を空ける {rest}秒")
             time.sleep(rest)
 
-    # --- BigQueryへの書き込み ---
     if rows_to_insert:
         errors = client.insert_rows_json(destination_table, rows_to_insert)
         if not errors:
@@ -113,9 +113,9 @@ def run_scraping_job(batch_index):
     else:
         print("登録対象データなし（すべて取得失敗）")
 
-# --- スクリプトとして実行された場合の入り口 ---
+# このファイルが直接実行された場合（ローカルテスト用）
 if __name__ == "__main__":
-    # Cloud Run Jobsは環境変数 `CLOUD_RUN_TASK_INDEX` を自動で設定
-    # これをバッチ番号として利用
-    batch_index = int(os.environ.get("CLOUD_RUN_TASK_INDEX", 0))
-    run_scraping_job(batch_index=batch_index)
+    parser = argparse.ArgumentParser(description="ローカルテスト用")
+    parser.add_argument("--batch_index", type=int, default=0)
+    args = parser.parse_args()
+    run_scraping_job(args.batch_index)
