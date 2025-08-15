@@ -11,7 +11,7 @@ steps:
     args:
       - 'run'
       - 'jobs'
-      - 'update'
+      - 'deploy'
       - 'pixiv-middle-class-ip-name-info-job' # ジョブ名
       - '--image'
       - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-middle-class-ip-name-info/scraper-image:latest'
