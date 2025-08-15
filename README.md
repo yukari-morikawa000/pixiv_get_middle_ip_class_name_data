@@ -1,2 +1,3 @@
 # pixiv_get_middle_ip_class_name_data
 CI/CD機能を利用する
+GCPで定期実行する
