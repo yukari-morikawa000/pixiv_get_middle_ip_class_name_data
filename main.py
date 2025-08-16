@@ -7,23 +7,7 @@ import random
 from datetime import datetime
 import json
 import os
-import argparse
-
-# Cloud Functions/Jobsの「入り口」となる関数
-def handle_pubsub(event, context):
-    # Pub/Subメッセージをトリガーとしてジョブを実行
-    batch_index = 0
-    try:
-        if 'data' in event:
-            message_data = base64.b64decode(event['data']).decode('utf-8')
-            payload = json.loads(message_data)
-            batch_index = int(payload.get("batch_index", 0))
-            print(f"Pub/Subメッセージからバッチ番号 {batch_index} を取得しました。")
-    except Exception as e:
-        print(f"メッセージの解析に失敗: {e}。バッチ番号0で実行します。")
-        batch_index = 0
-
-    run_scraping_job(batch_index)
+import argparse 
 
 # メインのスクレイピング処理
 def run_scraping_job(batch_index):
@@ -112,10 +96,9 @@ def run_scraping_job(batch_index):
     else:
         print("登録対象データなし（すべて取得失敗）")
 
-# ローカルテスト用のコード
+# このファイルが直接実行された場合の入り口
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="ローカルテスト用")
-    parser.add_argument("--batch_index", type=int, default=0)
+    parser = argparse.ArgumentParser(description="スクレイピングバッチ")
+    parser.add_argument("--batch_index", type=int, default=0, help="処理対象のバッチ番号")
     args = parser.parse_args()
-    # ローカル実行時はPub/Subイベントがないので、直接メイン処理を呼び出す
     run_scraping_job(args.batch_index)
