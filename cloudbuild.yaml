@@ -16,3 +16,6 @@ steps:
 
 images:
   - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-middle-class-ip-name-info/scraper-image:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
