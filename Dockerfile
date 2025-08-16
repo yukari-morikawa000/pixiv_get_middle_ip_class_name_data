@@ -11,5 +11,4 @@ COPY main.py .
 # 依存ライブラリをインストール
 RUN pip install --no-cache-dir -r requirements.txt
 
-# コンテナ起動時に実行するコマンドは不要
 # Cloud Run Jobがコンテナを実行する
