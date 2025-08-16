@@ -1,0 +1,11 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../for_cloud_function"
+		}
+	],
+	"settings": {}
+}

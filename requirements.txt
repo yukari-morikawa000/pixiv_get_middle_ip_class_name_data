@@ -3,5 +3,3 @@ google-cloud-bigquery
 google-api-python-client
 requests
 beautifulsoup4
-fastapi
-uvicorn

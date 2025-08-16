@@ -1,10 +1,15 @@
+# Python 3.12 の軽量イメージをベースにする
 FROM python:3.12-slim
 
+# 作業ディレクトリを設定
 WORKDIR /app
-COPY . /app
 
+# 必要なファイルをコピー
+COPY requirements.txt .
+COPY main.py .
+
+# 依存ライブラリをインストール
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Webサーバーは不要なのでEXPOSEは削除
-# CMDで直接Pythonスクリプトを実行する
-CMD ["python", "main.py"]
+# コンテナ起動時に実行するコマンドは不要
+# Cloud Run Jobがコンテナを実行する
