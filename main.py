@@ -1,7 +1,7 @@
 import base64
 from google.cloud import bigquery
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup # type: ignore
 import time
 import random
 from datetime import datetime
