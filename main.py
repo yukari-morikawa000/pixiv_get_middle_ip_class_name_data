@@ -9,27 +9,26 @@ import json
 import os
 import argparse
 
-# Pub/Subトリガーで起動される際の「入り口」となる関数
+# Cloud Functions/Jobsの「入り口」となる関数
 def handle_pubsub(event, context):
-    """Pub/Subメッセージをトリガーとしてジョブを実行します。"""
+    # Pub/Subメッセージをトリガーとしてジョブを実行
     batch_index = 0
     try:
-        # Pub/Subメッセージは 'data' フィールドにBase64エンコードされて格納されています
         if 'data' in event:
             message_data = base64.b64decode(event['data']).decode('utf-8')
             payload = json.loads(message_data)
             batch_index = int(payload.get("batch_index", 0))
             print(f"Pub/Subメッセージからバッチ番号 {batch_index} を取得しました。")
     except Exception as e:
-        print(f"メッセージの解析に失敗しました: {e}。バッチ番号0で実行します。")
+        print(f"メッセージの解析に失敗: {e}。バッチ番号0で実行します。")
         batch_index = 0
 
     run_scraping_job(batch_index)
 
-# メインのスクレイピング処理（この中身は変更なし）
+# メインのスクレイピング処理
 def run_scraping_job(batch_index):
     print(f"処理対象バッチ: {batch_index}")
-    project_id = os.environ.get("GCP_PROJECT_ID", "hogeticlab-legs-prd")
+    project_id = "hogeticlab-legs-prd"
     dataset_id = "z_personal_morikawa"
     source_table = f"{project_id}.{dataset_id}.pixiv_search_middle_class_ip_name_url"
     destination_table = f"{project_id}.{dataset_id}.pixiv_detail_info"
@@ -113,9 +112,10 @@ def run_scraping_job(batch_index):
     else:
         print("登録対象データなし（すべて取得失敗）")
 
-# このファイルが直接実行された場合（ローカルテスト用）
+# ローカルテスト用のコード
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="ローカルテスト用")
     parser.add_argument("--batch_index", type=int, default=0)
     args = parser.parse_args()
+    # ローカル実行時はPub/Subイベントがないので、直接メイン処理を呼び出す
     run_scraping_job(args.batch_index)
