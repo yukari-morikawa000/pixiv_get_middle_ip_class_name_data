@@ -1,21 +1,21 @@
-# このCloud Buildは、DockerイメージをビルドしてArtifact Registryにプッシュするだけ
 steps:
-  # ステップ1: Dockerイメージをビルド
-  - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - 'build'
-      - '-t'
-      - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-middle-class-ip-name-info/scraper-image:latest'
-      - '.'
+  # ステップ1: 必要なライブラリをインストールする
+  - name: 'python:3.12'
+    entrypoint: 'pip'
+    args: ['install', '-r', 'requirements.txt', '--user']
 
-  # ステップ2: ビルドしたイメージをArtifact Registryにプッシュ
-  - name: 'gcr.io/cloud-builders/docker'
+  # ステップ2: Pythonスクリプトを実行する
+  - name: 'python:3.12'
+    entrypoint: 'python'
     args:
-      - 'push'
-      - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-middle-class-ip-name-info/scraper-image:latest'
+      - 'main.py'
+      # Pub/Subメッセージからバッチ番号を取り出して引数として渡す
+      # デフォルトは0
+      - '--batch_index'
+      - $(body.message.data.batch_index)
 
-images:
-  - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-middle-class-ip-name-info/scraper-image:latest'
+# ビルド全体のタイムアウトを24時間に設定
+timeout: '86400s'
 
 options:
   logging: CLOUD_LOGGING_ONLY
