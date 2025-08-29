@@ -99,9 +99,9 @@ scraping.dig:
 
 timezone: Asia/Tokyo
 
- 毎日深夜3時に実行するスケジュール設定
+ 毎週月曜日AM4:00実行するスケジュール設定
 schedule:
-  daily>: 03:00:00
+  weekly>: Mon, 04:00:00
 
  _exportセクションで共通の変数を定義
 _export:
