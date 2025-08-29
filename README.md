@@ -107,7 +107,7 @@ schedule:
 _export:
   # 実行するDockerイメージのパスを指定
   # ご自身の環境に合わせて [ ] の部分を書き換えてください
-  docker_image: "asia-northeast1-docker.pkg.dev/[あなたのGCPプロジェクトID]/[リポジトリ名]/[イメージ名]:${session_uuid}" # タグは実行ごとに変えるか、latestに固定
+  docker_image: "asia-northeast1-docker.pkg.dev/hogeticlab-legs-prd/pixiv-middle-class-ip-name-info/pixiv_scraping_image:${session_uuid}" # タグは実行ごとに変えるか、latestに固定
   
 GCPのプロジェクトIDとデータセット名を環境変数として設定
   GCP_PROJECT_ID: "hogeticlab-legs-prd"
@@ -132,5 +132,6 @@ GCPのプロジェクトIDとデータセット名を環境変数として設定
 
 
 ステップ4: 実行と確認
-設定したスケジュールになると、Digdagは指定されたバッチ番号の数だけ並列でタスクを実行します。 実行ログはDigdagのUIおよびGCPのCloud Loggingで確認できます。Cloud Loggingでは、main.pyから出力される構造化ログによって、より詳細な分析が可能です。
+設定したスケジュールになると、Digdagは指定されたバッチ番号の数だけ並列でタスクを実行します。   
+実行ログはDigdagのUIおよびGCPのCloud Loggingで確認できます。Cloud Loggingでは、main.pyから出力される構造化ログによって、より詳細な分析が可能です。
 ```
