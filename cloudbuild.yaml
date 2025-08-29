@@ -1,20 +1,23 @@
 steps:
-  # ステップ1: 必要なライブラリをインストールする
-  - name: 'python:3.12'
-    entrypoint: 'pip'
-    args: ['install', '-r', 'requirements.txt', '--user']
+  # 1. Dockerイメージをビルド
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+    - 'build'
+    - '-t'
+    - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-middle-class-ip-name-info/pixiv_scraping_image:$COMMIT_SHA'
+    - '.'
 
-  # ステップ2: Pythonスクリプトを実行する
-  - name: 'python:3.12'
-    entrypoint: 'python'
-    args:
-      - 'main.py'
-      # Pub/Subメッセージからバッチ番号を取り出して引数として渡す
-      # デフォルトは0
-      - '--batch_index'
-      - $(body.message.data.batch_index)
+  # 2. ビルドしたイメージをArtifact Registryにプッシュ
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+    - 'push'
+    - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-middle-class-ip-name-info/pixiv_scraping_image:$COMMIT_SHA'
 
-# ビルド全体のタイムアウトを24時間に設定
+# ビルド成果物としてイメージを登録
+images:
+  - 'asia-northeast1-docker.pkg.dev/$PROJECT_ID/pixiv-middle-class-ip-name-info/pixiv_scraping_image:$COMMIT_SHA'
+
+# タイムアウト設定 (24時間）
 timeout: '86400s'
 
 options:
