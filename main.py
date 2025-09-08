@@ -3,18 +3,31 @@ import os
 import random
 import time
 from datetime import datetime
+
+import google.auth
 import requests
 from bs4 import BeautifulSoup  # type: ignore
 from google.cloud import bigquery
 
 # メインのスクレイピング処理
 def run_scraping_job(batch_index):
-    # 環境変数
+    # 環境変数から設定を読み込む
     project_id = os.getenv("GCP_PROJECT_ID", "hogeticlab-legs-prd")
     dataset_id = os.getenv("BIGQUERY_DATASET", "z_personal_morikawa")
     
     print(f"処理開始。対象バッチ: {batch_index}")
     print(f"Project ID: {project_id}, Dataset ID: {dataset_id}")
+
+    # 【重要】現在どのサービスアカウントとして認識されているかを確認・出力する
+    try:
+        credentials, project = google.auth.default()
+        if hasattr(credentials, 'service_account_email'):
+            print(f"認証情報: 実行中のサービスアカウントは {credentials.service_account_email} です。")
+        else:
+            print("認証情報: サービスアカウントのメールアドレスを取得できませんでした（おそらくメタデータサーバーへのアクセスに失敗）。")
+    except google.auth.exceptions.DefaultCredentialsError:
+        print("認証情報: デフォルトの認証情報が見つかりませんでした。")
+
 
     source_table = f"{project_id}.{dataset_id}.pixiv_search_middle_class_ip_name_url"
     destination_table = f"{project_id}.{dataset_id}.pixiv_detail_info"
@@ -31,6 +44,7 @@ def run_scraping_job(batch_index):
         # URLが取得できなければ処理を終了
         return
 
+    # ... (以降の処理は変更なし) ...
     def parse_pixiv_detail(url):
         headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"}
         try:
@@ -110,3 +124,4 @@ if __name__ == "__main__":
     parser.add_argument("--batch_index", type=int, default=0, help="処理対象のバッチ番号")
     args = parser.parse_args()
     run_scraping_job(args.batch_index)
+
