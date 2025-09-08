@@ -2,10 +2,9 @@ import argparse
 import os
 import random
 import time
-from datetime import datetime
-import re # 正規表現ライブラリをインポート
+from datetime import datetime, timezone # timezone をインポート
+import re
 
-import google.auth
 import requests
 from bs4 import BeautifulSoup  # type: ignore
 from google.cloud import bigquery
@@ -62,29 +61,23 @@ def run_scraping_job(batch_index):
             elif "イラストを投稿する" in text: illust_post_url = href
             elif "小説を投稿する" in text: novel_post_url = href
         
-        # --- 【修正】閲覧数などを取得するロジックをHTMLの構造に合わせて変更 ---
         stats = {"view_count": None, "comment_count": None, "works_count": None}
         
         def extract_count(text_label):
             try:
-                # 'title'属性が指定されたテキストで始まるliタグを探す
-                # 例: title="閲覧数: 123,456"
                 target_li = soup.find('li', title=re.compile(f"^{text_label}"))
                 if target_li:
-                    # liタグの中にあるdivタグから数字を取得する
                     count_div = target_li.find('div')
                     if count_div:
                         count_text = count_div.get_text(strip=True).replace(",", "")
                         return int(count_text)
             except (ValueError, AttributeError):
-                 # 数字が見つからない、または変換に失敗した場合はNoneを返す
                 return None
             return None
 
         stats["view_count"] = extract_count("閲覧数")
         stats["comment_count"] = extract_count("コメント数")
         stats["works_count"] = extract_count("作品数")
-        # -------------------------------------------------------------
 
         return {
             "url": url, "title": title, "sub_title": sub_title, "bookmark": bookmark,
@@ -102,7 +95,8 @@ def run_scraping_job(batch_index):
         time.sleep(wait_sec)
         detail = parse_pixiv_detail(url)
         if detail:
-            detail["loaded_at"] = datetime.now(datetime.UTC).isoformat()
+            # 【修正】datetime.now(datetime.UTC) を datetime.now(timezone.utc) に変更 （古いタイプのPythonでも対応可能）
+            detail["loaded_at"] = datetime.now(timezone.utc).isoformat()
             rows_to_insert.append(detail)
         else:
             print(f"スキップ: {url}")
