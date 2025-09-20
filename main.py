@@ -50,12 +50,10 @@ def parse_pixiv_detail(url):
     stats = {"view_count": None, "comment_count": None, "works_count": None}
     
     def extract_count(text_label):
-        # 閲覧数、コメント数、作品数のliタグを柔軟に検索する
         found_tag = soup.find(lambda tag: (tag.name == 'li' or tag.name == 'a') and tag.has_attr('title') and text_label in tag['title'])
         if not found_tag:
             return None
         
-        # 数値が含まれるdivタグを探す
         count_div = found_tag.find('div', class_='typography-14')
         if not count_div:
             return None
@@ -78,10 +76,7 @@ def parse_pixiv_detail(url):
     }
 
 def run_scraping_job(batch_index):
-    """
-    スクレイピングジョブのメイン処理。
-    BigQueryからURLを取得し、スクレイピングして結果を保存する。
-    """
+    ## メインの処理
     project_id = os.getenv("GCP_PROJECT_ID", "hogeticlab-legs-prd")
     dataset_id = os.getenv("BIGQUERY_DATASET", "z_personal_morikawa")
     
@@ -95,35 +90,34 @@ def run_scraping_job(batch_index):
     limit = 100
     offset = batch_index * limit
     
-    # URLを固定の順序で取得
-    query = f"SELECT URL FROM `{source_table}` WHERE URL IS NOT NULL ORDER BY URL LIMIT {limit} OFFSET {offset}"
+    # URLとmiddle_class_ip_nameを固定の順序で取得
+    query = f"SELECT URL, middle_class_ip_name FROM `{source_table}` WHERE URL IS NOT NULL ORDER BY URL LIMIT {limit} OFFSET {offset}"
     
     try:
-        urls = [row.URL for row in client.query(query).result()]
-        print(f"対象URL数: {len(urls)}")
+        # タプルでリスト化
+        source_data = [(row.URL, row.middle_class_ip_name) for row in client.query(query).result()]
+        print(f"対象データ数: {len(source_data)}")
     except Exception as e:
-        print(f"BigQueryからのURL取得に失敗しました: {e}")
-        return # URLが取得できなければ処理を終了
+        print(f"BigQueryからのデータ取得に失敗しました: {e}")
+        return
 
-    # 取得したURLの処理順序をランダム化
-    random.shuffle(urls)
+    # 取得したデータの処理順序をランダム化
+    random.shuffle(source_data)
     
     rows_to_insert = []
-    for idx, url in enumerate(urls, start=1):
-        # 待機時間を長くして、サーバーへの負荷を軽減
+    for idx, (url, middle_class_ip_name) in enumerate(source_data, start=1):
         wait_sec = round(random.uniform(3.0, 8.0), 2)
-        print(f"[{idx}/{len(urls)}] 処理中: {url} (待機: {wait_sec}s)")
+        print(f"[{idx}/{len(source_data)}] 処理中: {url} (待機: {wait_sec}s)")
         time.sleep(wait_sec)
         
         detail = parse_pixiv_detail(url)
         if detail:
-            # 現在時刻
             detail["loaded_at"] = datetime.now(timezone.utc).isoformat()
+            detail["middle_class_ip_name"] = middle_class_ip_name
             rows_to_insert.append(detail)
         else:
             print(f"スキップ: {url}")
         
-        # 50件ごとにさらに長めに待機
         if idx % 50 == 0:
             rest = round(random.uniform(90, 150), 2)
             print(f"{idx}件完了 → 長めに間を空ける {rest}秒")
@@ -143,4 +137,3 @@ if __name__ == "__main__":
     parser.add_argument("--batch_index", type=int, default=0, help="処理対象のバッチ番号 (0から始まる)")
     args = parser.parse_args()
     run_scraping_job(args.batch_index)
-
