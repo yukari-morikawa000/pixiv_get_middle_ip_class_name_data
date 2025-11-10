@@ -12,11 +12,15 @@ def parse_pixiv_detail(url):
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
     }
+    # 時間を確認する
+    start_time = time.time()
     try:
-        res = requests.get(url, headers=headers, timeout=10)
+        res = requests.get(url, headers=headers, timeout=5)
         res.raise_for_status()
+        print(f"URL取得成功: {url} ({time.time() - start_time:.2f}s)")
     except Exception as e:
         print(f"URL取得失敗：{url} エラー：{e}")
+        print(f"URL取得失敗: {url} エラー: {e} ({time.time() - start_time:.2f}s)")
         return None
     
     soup = BeautifulSoup(res.text, 'html.parser')
