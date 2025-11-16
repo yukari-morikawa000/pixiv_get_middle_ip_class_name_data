@@ -15,7 +15,7 @@ def parse_pixiv_detail(url):
     # 時間を確認する
     start_time = time.time()
     try:
-        res = requests.get(url, headers=headers, timeout=5)
+        res = requests.get(url, headers=headers, timeout=15)
         res.raise_for_status()
         print(f"URL取得成功: {url} ({time.time() - start_time:.2f}s)")
     except Exception as e:
@@ -110,7 +110,7 @@ def run_scraping_job(batch_index):
     
     rows_to_insert = []
     for idx, (url, middle_class_ip_name) in enumerate(source_data, start=1):
-        wait_sec = round(random.uniform(3.0, 8.0), 2)
+        wait_sec = round(random.uniform(4.0, 10.0), 2)
         print(f"[{idx}/{len(source_data)}] 処理中: {url} (待機: {wait_sec}s)")
         time.sleep(wait_sec)
         
@@ -123,7 +123,7 @@ def run_scraping_job(batch_index):
             print(f"スキップ: {url}")
         
         if idx % 50 == 0:
-            rest = round(random.uniform(90, 150), 2)
+            rest = round(random.uniform(120, 240), 2)
             print(f"{idx}件完了 → 長めに間を空ける {rest}秒")
             time.sleep(rest)
 
