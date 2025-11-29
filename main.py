@@ -79,24 +79,42 @@ def parse_pixiv_detail(url):
         "works_count": stats["works_count"]
     }
 
-def run_scraping_job(batch_index):
+def run_scraping_job():
     ## メインの処理
     project_id = os.getenv("GCP_PROJECT_ID", "hogeticlab-legs-prd")
     dataset_id = os.getenv("BIGQUERY_DATASET", "z_personal_morikawa")
     
-    print(f"処理開始。対象バッチ: {batch_index}")
+    print(f"処理開始")
     print(f"Project ID: {project_id}, Dataset ID: {dataset_id}")
 
     source_table = f"{project_id}.{dataset_id}.pixiv_search_middle_class_ip_name_url"
     destination_table = f"{project_id}.{dataset_id}.pixiv_detail_info"
     client = bigquery.Client(project=project_id)
     
-    limit = 100
-    offset = batch_index * limit
+    limit = 600
+    # offset = batch_index * limit
     
     # URLとmiddle_class_ip_nameを固定の順序で取得
-    query = f"SELECT URL, middle_class_ip_name FROM `{source_table}` WHERE URL IS NOT NULL ORDER BY URL LIMIT {limit} OFFSET {offset}"
-    
+   # query = f"SELECT URL, middle_class_ip_name FROM `{source_table}` WHERE URL IS NOT NULL AND (ORDER BY URL LIMIT {limit} OFFSET {offset}"
+    query = f"""
+        SELECT
+            URL,
+            middle_class_ip_name
+        FROM
+            `{source_table}`
+        WHERE
+            -- まだ一度も取得されていない新規のデータ
+            URL IS NOT NULL
+            AND ( -- 7日以上前に最終アクセスされたデータ
+                last_scraped_at IS NULL
+                OR
+                last_scraped_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP("Asia/Tokyo"), INTERVAL 7 DAY)
+            )
+        ORDER BY
+            RAND()
+        LIMIT {limit}
+        """
+
     try:
         # タプルでリスト化
         source_data = [(row.URL, row.middle_class_ip_name) for row in client.query(query).result()]
@@ -136,8 +154,36 @@ def run_scraping_job(batch_index):
     else:
         print("登録対象データなし（すべて取得失敗）")
 
+    # 処理に成功したURLのリストを作成
+    successful_urls = [row["url"] for row in rows_to_insert]
+
+    if successful_urls:
+        # 処理に成功したURLのlast_scraped_atを現在時刻で更新する
+        
+        now_utc_iso = datetime.now(timezone.utc).isoformat()
+        
+        # BigQueryのSQLで使用するために、URLリストを文字列にフォーマット
+        # 例: "'url1', 'url2', 'url3'"
+        url_list_str = ", ".join(f"'{url}'" for url in successful_urls)
+        
+        update_query = f"""
+            UPDATE `{source_table}`
+            SET last_scraped_at = TIMESTAMP('{now_utc_iso}')
+            WHERE URL IN ({url_list_str})
+        """
+        
+        try:
+            # クエリを実行
+            update_job = client.query(update_query)
+            update_job.result() # 完了を待つ
+            print(f"ソーステーブルのlast_scraped_atを {len(successful_urls)} 件更新しました。")
+        except Exception as e:
+            print(f"ソーステーブルの更新に失敗しました: {e}")
+
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="pixiv百科事典スクレイピングバッチ")
-    parser.add_argument("--batch_index", type=int, default=0, help="処理対象のバッチ番号 (0から始まる)")
-    args = parser.parse_args()
-    run_scraping_job(args.batch_index)
+    # parser = argparse.ArgumentParser(description="pixiv百科事典スクレイピングバッチ")
+    # parser.add_argument("--batch_index", type=int, default=0, help="処理対象のバッチ番号 (0から始まる)")
+    # args = parser.parse_args()
+    # run_scraping_job(args.batch_index)
+    run_scraping_job()
