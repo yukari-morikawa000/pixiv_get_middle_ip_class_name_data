@@ -108,7 +108,7 @@ def run_scraping_job():
             AND ( -- 7日以上前に最終アクセスされたデータ
                 last_scraped_at IS NULL
                 OR
-                last_scraped_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP("Asia/Tokyo"), INTERVAL 7 DAY)
+                last_scraped_at < TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
             )
         ORDER BY
             RAND()
@@ -187,3 +187,5 @@ if __name__ == "__main__":
     # args = parser.parse_args()
     # run_scraping_job(args.batch_index)
     run_scraping_job()
+
+    
