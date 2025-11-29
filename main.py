@@ -91,7 +91,7 @@ def run_scraping_job():
     destination_table = f"{project_id}.{dataset_id}.pixiv_detail_info"
     client = bigquery.Client(project=project_id)
     
-    limit = 600
+    limit = 10 # 600
     # offset = batch_index * limit
     
     # URLとmiddle_class_ip_nameを固定の順序で取得
